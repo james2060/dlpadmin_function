@@ -1,16 +1,34 @@
 
-const {onCall} = require("firebase-functions/v2/https");
+const {onRequest} = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
-// const logger = require("firebase-functions/logger");
+const verifytoken = require("./middleware/verifytoken");
+
 // Firebase Admin 초기화
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
 
-// 디바이스 등록 (2세대)
-exports.register_device = onCall(async (request) => {
+/**
+ * 에이전트가 설치된 디바이스 정보 등록
+ * @param {json}request data
+ */
+exports.register_device = onRequest(async (req, res) => {
   try {
+    // Authorization 헤더 확인
+    const authorizationHeader = req.headers["authorization"];
+    if (!authorizationHeader) {
+      return res.status(401).json({success: false, message: "Authorization header is required"});
+    }
+    console.log("Authorization Header:", authorizationHeader);
+    // Access Token 검증
+    const decodedToken = await verifytoken.verifyAccessToken(authorizationHeader);
+    if (!decodedToken) {
+      return res.status(403).json({success: false, message: "Invalid or expired token"});
+    }
+    if (!decodedToken) {
+      throw new Error(decodedToken);
+    }
     const {
       user_id,
       org_id,
@@ -20,7 +38,7 @@ exports.register_device = onCall(async (request) => {
       id_addr,
       os_version,
       computer_name,
-    } = request.data;
+    } = req.body.data;
 
     if (!user_id || !org_id || !os_name || !cpu ||
         !mac_addr || !id_addr || !os_version || !computer_name) {
@@ -55,7 +73,9 @@ exports.register_device = onCall(async (request) => {
       });
 
       console.log("Device registered successfully:");
-      return {success: true, deviceId: deviceRef.id};
+      return res.status(200).json({
+        success: true,
+        message: "Device registered successfully"});
     } else {
       // 중복 데이터가 존재하는 경우
       // 디바이스 상세 정보 업데이트
@@ -83,10 +103,14 @@ exports.register_device = onCall(async (request) => {
         }
       });
       console.log("device_info updated successfully:");
-      return {success: true};
+      return res.status(200).json({
+        success: true,
+        message: "Device Info registered successfully"});
     }
   } catch (error) {
-    console.error("Device registration failed");
-    throw new Error("Device registration failed");
+    console.error("Device registration failed", error.message);
+    return res.status(500).json({
+      success: false,
+      message: `Device registration failed: ${error.message}`});
   }
 });
