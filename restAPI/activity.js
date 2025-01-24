@@ -26,7 +26,7 @@ exports.record_activity = onCall(async (request) => {
       event_type,
       file_id,
       text_id,
-      event_time: "2025-03-25T10:30:00.000Z",
+      event_time: new Date().toISOString(),
     });
     return {success: true, fileId: activityRef.id};
   } catch (error) {
