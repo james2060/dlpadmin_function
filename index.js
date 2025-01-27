@@ -5,10 +5,9 @@
 const admin = require("firebase-admin");
 // const logger = require("firebase-functions/logger");
 
-const user = require("./user");
-const file = require("./file");
-const device = require("./device");
-const activity = require("./activity");
+const user = require("./restAPI/user");
+const device = require("./restAPI/device");
+const activity = require("./restAPI/activity");
 
 // Firebase Admin 초기화
 if (!admin.apps.length) {
@@ -19,8 +18,8 @@ if (!admin.apps.length) {
 exports.register_user = user.register_user;
 // Device 등록
 exports.register_device = device.register_device;
-// 파일 정보 등록
-exports.record_fileinfo = file.regcord_fileinfo;
-// 활동 정보 등록
-exports.record_activity = activity.record_activity;
+// 텍스트 유출 활동 정보 기록
+exports.record_textleak = activity.saveTextLeakEvent;
+// 파일 유출 활동 정보 기록
+exports.record_fileleak = activity.saveFileUploadEvent;
 
